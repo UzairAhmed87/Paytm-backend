@@ -6,5 +6,5 @@ app.use(express.json())
 
 const mainRouter = require("./routes/index")
 
-app.use("/api/v1")
+app.use("/api/v1",mainRouter)
 app.listen(3000) 
