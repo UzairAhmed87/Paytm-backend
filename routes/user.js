@@ -1,4 +1,5 @@
-const express = require("express")
+const express = require("express");
+const {authMiddleware} = require("../middleware/user");
 const router = express.Router();
 const zod = require("zod");
 const {User} = require("../db");
@@ -15,9 +16,14 @@ const signupSchema = zod.object({
         username : zod.string.email(),
         password : zod.string()
     })
+    const updateSchema = zod.object({
+        password : zod.string().optional(),
+        firstName : zod.string().optional(),
+        lastName : zod.string().optional()
+    })
 
-
-router.post("/signup",async(req,res)=>{
+//Signup Route
+router.post("/signup",authMiddleware,async(req,res)=>{
     const body = req.body;
     const {success} = signupSchema.safeParse(body);
     if (!success) {
@@ -43,8 +49,8 @@ token : token
 })
 
 })
-
-router.post("/signin",async(req,res)=>{
+//SignIn Route
+router.post("/signin",authMiddleware,async(req,res)=>{
     const body = req.body;
     const {success} = signinSchema.safeParse(body);
     if (!success) {
@@ -69,6 +75,43 @@ if (user) {
 res.status(411).json({
     message : "Error while logging in"
 })
+})
+//User update route
+router.put("/updateUser",authMiddleware,async(req,res)=>{
+    const {success} = updateSchema.safeParse(req.body)
+    if (!success) {
+        res.status(411).json({
+            message : "Error while updating information"
+        })
+    }
+    await User.updateOne({_id : req.userId},req.body);
+    res.json({
+        message : "Updated successfully"
+    })
+})
+
+//find Users route
+router.get("/bulk",async(req,res)=>{
+    const filter = req.query.filter || "";
+    const users = await User.find({
+        $or : [{
+            firstName : {
+                "$regex" : filter
+            }
+        },{
+            lastName : {
+                "$regex" : filter
+            }
+        }]
+    })
+    res.json({
+        user : users.map(user => ({
+           username : user.username,
+           firstName : user.firstName,
+           lastName : user.lastName,
+           _id : user._id
+        }))
+    })
 })
 
 module.exports = router;
