@@ -25,13 +25,14 @@ const signupSchema = zod.object({
 //Signup Route
 router.post("/signup",async(req,res)=>{
     const body = req.body;
+    console.log(body);
     const {success} = signupSchema.safeParse(body);
     if (!success) {
         return res.status(411).json({
             message : " Incorrect Inputs"
         })
     }
-    console.log(body);
+    
     
     const existingUser = await User.findOne({
     username : body.username
